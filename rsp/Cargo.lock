@@ -3,12 +3,5 @@
 version = 3
 
 [[package]]
-name = "co-gamebot"
-version = "0.1.0"
-dependencies = [
- "rsp",
-]
-
-[[package]]
 name = "rsp"
 version = "0.1.0"
