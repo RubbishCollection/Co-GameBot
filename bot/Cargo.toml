@@ -1,0 +1,18 @@
+[package]
+name = "bot"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rsp = { path = "../rsp" }
+dummy-game = { path = "../dummy-game" }
+
+endorphin = "*"
+
+serenity = { version = "*", features = ["unstable_discord_api"] }
+tokio = { version = "*", features = ["full"] }
+
+thiserror = "*"
+parking_lot = { version = "0.11.2", features = ["send_guard"] }
