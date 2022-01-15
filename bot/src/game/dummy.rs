@@ -18,7 +18,7 @@ impl Dummy {
         let mut first_row = CreateActionRow::default();
         first_row.add_button(Self::none_button("none1"));
         first_row.add_button(Self::button_with("up", "↑", ButtonStyle::Primary));
-        first_row.add_button(Self::none_button("none2"));
+        first_row.add_button(Self::button_with("quit", "X", ButtonStyle::Danger));
 
         let mut second_row = CreateActionRow::default();
         second_row.add_button(Self::button_with("left", "←", ButtonStyle::Primary));
@@ -52,6 +52,10 @@ impl Game for Dummy {
         &mut self,
         interaction: &MessageComponentInteraction,
     ) -> Option<String> {
+        if interaction.data.custom_id == "quit" {
+            return None;
+        }
+        
         let dir = match &interaction.data.custom_id[..] {
             "up" => Direction::Up,
             "down" => Direction::Down,

@@ -57,8 +57,8 @@ impl GameManager {
         }
     }
 
-    pub async fn interaction(&mut self, ctx: Context, interaction: MessageComponentInteraction) {
-        if let InteractionMessage::Regular(mut msg) = interaction.message.clone() {
+    pub async fn handle_interaction(&mut self, ctx: Context, interaction: MessageComponentInteraction) {
+        if let InteractionMessage::Regular(msg) = interaction.message.clone() {
             let result = if let Some(game) = self.games.get_mut(&(msg.channel_id, msg.id)) {
                 //if pressed user is not a particiapant exit function.
                 if !game.is_participant(&interaction.user.name) {
@@ -84,6 +84,13 @@ impl GameManager {
                         .unwrap();
                 }
                 None => {
+                    let mut embed = CreateEmbed::default();
+                    embed.description("Player quit the game");
+                    
+                    interaction.create_interaction_response(&ctx, |r| {
+                        r.kind(InteractionResponseType::UpdateMessage);
+                        r.interaction_response_data(|d| d.embeds(vec![embed]))
+                    }).await.unwrap();
                     self.games.remove(&(msg.channel_id, msg.id));
                 }
             }

@@ -59,7 +59,7 @@ impl EventHandler for MessageHandler {
             Interaction::ApplicationCommand(_) => return,
             Interaction::MessageComponent(interact) => {
                 let mut gm = self.gm.lock();
-                gm.interaction(ctx, interact).await;
+                gm.handle_interaction(ctx, interact).await;
             }
         }
     }
