@@ -4,7 +4,7 @@ use serenity::model::interactions::message_component::{ButtonStyle, MessageCompo
 
 use crate::Game;
 
-use dummy_game::dummy::{Coord, DummyGame, Direction};
+use dummy_game::dummy::{Coord, Direction, DummyGame};
 
 pub struct Dummy {
     game: DummyGame,
@@ -48,14 +48,11 @@ impl Dummy {
 }
 
 impl Game for Dummy {
-    fn handle_interaction(
-        &mut self,
-        interaction: &MessageComponentInteraction,
-    ) -> Option<String> {
+    fn handle_interaction(&mut self, interaction: &MessageComponentInteraction) -> Option<String> {
         if interaction.data.custom_id == "quit" {
             return None;
         }
-        
+
         let dir = match &interaction.data.custom_id[..] {
             "up" => Direction::Up,
             "down" => Direction::Down,
