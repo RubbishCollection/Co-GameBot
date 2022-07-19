@@ -1,20 +1,20 @@
-use std::cell::RefCell;
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use endorphin::policy::TTIPolicy;
 use endorphin::HashMap;
 
-use serenity::builder::CreateEmbed;
 use serenity::client::Context;
 use serenity::model::id::{ChannelId, MessageId};
 use serenity::model::interactions::message_component::{
     InteractionMessage, MessageComponentInteraction,
 };
-use serenity::model::interactions::InteractionResponseType;
+
+use tracing::info;
+use tracing::instrument;
 
 use crate::Error;
 use crate::Game;
+use crate::UpdateMessage;
 
 type BoxedGame = Box<dyn Game + Send + Sync>;
 
@@ -29,6 +29,7 @@ impl GameManager {
         }
     }
 
+    #[instrument(level = "info", skip(self, ctx, game))]
     pub async fn register(
         &mut self,
         ctx: Context,
@@ -47,17 +48,25 @@ impl GameManager {
             .await
         {
             Ok(msg) => {
+                info!(?msg.id);
+
                 self.games.insert((msg.channel_id, msg.id), game, tti);
                 Ok(())
             }
             Err(err) => {
-                println!("{:#?}", err);
+                info!("Error: {}", err);
+
                 Err(Error::RegisterFailed)
             }
         }
     }
 
-    pub async fn handle_interaction(&mut self, ctx: Context, interaction: MessageComponentInteraction) {
+    #[instrument(level = "debug", skip(self, ctx, interaction))]
+    pub async fn handle_interaction(
+        &mut self,
+        ctx: Context,
+        interaction: MessageComponentInteraction,
+    ) {
         if let InteractionMessage::Regular(msg) = interaction.message.clone() {
             let result = if let Some(game) = self.games.get_mut(&(msg.channel_id, msg.id)) {
                 //if pressed user is not a particiapant exit function.
@@ -67,30 +76,17 @@ impl GameManager {
 
                 game.handle_interaction(&interaction)
             } else {
-                Some("Content is expired by Timeout".to_string())
+                Some("Content is expired.".to_string())
             };
 
             match result {
                 Some(result) => {
-                    let mut embed = CreateEmbed::default();
-                    embed.description(result);
-
-                    interaction
-                        .create_interaction_response(&ctx, |r| {
-                            r.kind(InteractionResponseType::UpdateMessage);
-                            r.interaction_response_data(|d| d.embeds(vec![embed]))
-                        })
-                        .await
-                        .unwrap();
+                    interaction.update_embed(ctx, &result).await;
                 }
                 None => {
-                    let mut embed = CreateEmbed::default();
-                    embed.description("Player quit the game");
-                    
-                    interaction.create_interaction_response(&ctx, |r| {
-                        r.kind(InteractionResponseType::UpdateMessage);
-                        r.interaction_response_data(|d| d.embeds(vec![embed]))
-                    }).await.unwrap();
+                    info!(?msg.id, ?msg.channel_id, "Removed by explicit `quit` interaction");
+
+                    interaction.update_embed(ctx, "Player quit the game").await;
                     self.games.remove(&(msg.channel_id, msg.id));
                 }
             }
